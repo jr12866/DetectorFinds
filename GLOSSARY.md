@@ -17,6 +17,10 @@ detector, and a target signal. A Find contains zero or more **Item**s.
 A single physical object recovered from a Find: one coin, one button, one scrap nail.
 Items live inside exactly one Find. A Find with several items is a "multi".
 
+**Multi** — a **Find** with more than one **Item**
+One hole that produced several objects — a button cluster, a purser's crash. The Items share
+the Find's **Position** and **Date Found** but are recorded and classified individually.
+
 **Miss** — `Find` with zero Items
 A hole dug and nothing found. A first-class record, not a special case: the Find exists,
 its pin is drawn, and it answers "have I dug here before?". Never modelled as a nullable
@@ -25,6 +29,11 @@ flag on a Find or as a separate entity.
 **Date Found** — `foundAt`
 The UTC instant the **Find** happened, plus the local UTC offset at that moment. One
 instant per Find; every **Item** in it shares it.
+
+**Target Signal** — `targetSignal`
+What the **Detector** said at the hole, in the detector's own units — a VDI number, a tone
+described in words, a depth readout. Free text, optional, and worth keeping: it is the only
+record of what the machine thought before the hole was dug.
 
 ## Classification and description
 
@@ -156,6 +165,14 @@ A rectangle of **Basemap** tiles deliberately downloaded for offline use, normal
 **Site Boundary** plus a margin. A Site's Cached Areas are what make it usable with no signal;
 a Cached Area is not a backup and is safe to delete at any time.
 
+**Cluster** — `cluster`
+The circle standing in for several **Pins** at low zoom, showing a count. Tapping it zooms in
+until the Pins separate. A cluster of **Miss**es looks different from a cluster of recoveries.
+
+**Vertex** — `vertex`
+A corner of a **Site Boundary**. Added by tapping, moved by dragging the selected corner,
+removed with the Delete button — never by a long-press.
+
 ## Using the app
 
 **Field Mode** — `mode: "field"`
@@ -180,6 +197,31 @@ The state a **Track** enters when the app leaves the foreground, because Chrome 
 delivering positions. The pause is shown to the user and the gap is kept as a gap; positions are
 never invented for it.
 
+**Large Text** — `largeText`
+The setting that raises body text to 20 px and control text to 18 px throughout, without
+changing the 56 px minimum.
+
+**Move Pin** — `positionSource` change
+The way a **Pin** is repositioned without a drag: open the pin's popup, choose Move Pin, tap
+the new position. Sets `positionSource: "hand"` and drops any accuracy claim. Long-press
+dragging is not used — Field Mode forbids it.
+
+**Find Editor** — `FindEditor`
+The screen for one **Find**: its position, photos, note, **Items** and the **Session** and
+**Site** it belongs to. Reached from the pin's popup card, the lists and search.
+
+**Start Session sheet** — `StartSessionSheet`
+The bottom sheet that opens a **Session**: pick a **Site**, pick a **Detector**, pick a
+**Settings Preset**, then Start. Nothing is pre-selected on the user's behalf, because the
+wrong Site is worse than an extra tap.
+
+**Diagnostics** — `diagnostics`
+The Settings screen that shows what the app can actually see: storage quota and whether it is
+persisted, service worker and cache versions, geolocation permission, tile cache size, record
+counts. The place to look when something on a phone behaves oddly.
+
+## Getting data in and out
+
 **Backup** — `BackupFile`
 A ZIP containing a JSON dump of every store plus the photo originals. The only way data leaves
 the device other than CSV and GPX.
@@ -196,6 +238,19 @@ the explicit statement that the current data will be replaced.
 The printable per-Site page handed to a landowner: what was found, where, a map of the
 **Site Boundary** and **Pins**, and free-text notes.
 
-**Large Text** — `largeText`
-The setting that raises body text to 20 px and control text to 18 px throughout, without
-changing the 56 px minimum.
+**CSV Contract** — `schema_version: 1`
+The published column layout in [docs/CSV-IMPORT.md](./docs/CSV-IMPORT.md) that users format
+old finds into. Export writes exactly the same layout, so a round trip is a test.
+
+**Schema Version** — `schemaVersion`
+The version of the **CSV Contract** a file was written against, repeated on every row so a
+half-parsed file is still identifiable. A file whose version the app does not understand is
+refused, never guessed at.
+
+**Tombstone** — `deletedAt`
+A record marked deleted rather than removed, so an export and a later import do not resurrect
+it. Purged after the **Bin** window.
+
+**Row Reference** — `find_ref`
+A user-supplied key in the **CSV Contract** that groups an **Item** row with its **Find** row.
+It exists only inside the CSV; it is never stored in the data model.
