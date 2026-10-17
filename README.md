@@ -1,13 +1,13 @@
 # DetectorFinds
 
-*Working title. The repo name sets the PWA scope, so settle the name before the first deploy.*
-
 An offline-first Android web app for metal detecting finds: log a hole where you are standing,
 drop a pin, photograph it, and deal with the detail later at home. Everything lives on the phone.
 No account, no server, no upload.
 
-**Status: documentation only. No code yet.** The spec is finished and the build order is set;
-implementation starts at [step 00](./docs/build/00-scaffold-and-installable-shell.md).
+**Status: step 00 built.** The installable shell runs on a phone: manifest, service worker,
+hash routing, the five empty screens, and a Diagnostics screen that says whether the phone can be
+trusted with the data. The spec is finished and the build order is set; the next step is
+[step 01, the data layer](./docs/build/01-data-layer.md).
 
 ## What it does
 
@@ -31,18 +31,22 @@ implementation starts at [step 00](./docs/build/00-scaffold-and-installable-shel
 
 ## How to build and run
 
-Not yet buildable. Once step 00 exists:
-
 ```bash
 npm install
 npm run dev      # development server
 npm run build    # production build into dist/
+npm run preview  # serve dist/ locally
+npm test         # the logic tests
 ```
+
+The build served by `npm run preview` is installable and registers its service worker, so the
+shell can be checked in a desktop browser before it is ever deployed.
 
 Deployment is GitHub Pages, because the app needs HTTPS for service workers, geolocation and
 installability, and Pages is free. The app is served from a subpath, so `base` in the Vite
-config and the scope in the manifest must both match the repo name.
+config and the scope in the manifest must both match the repo name. The build sets that base
+when `GITHUB_PAGES=true`, which the deploy workflow does; a plain local build serves from `/`.
 
 ## Licence
 
-MIT. See `LICENSE` (to be added once the copyright holder name is settled).
+MIT. See [LICENSE](./LICENSE).
