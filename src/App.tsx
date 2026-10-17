@@ -1,5 +1,6 @@
 import { BottomNav } from './components/BottomNav'
 import { CompatibilityBanner } from './components/CompatibilityBanner'
+import { PersistencePrompt } from './components/PersistencePrompt'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { hrefFor } from './router/hashRouter'
 import { matchAppRoute } from './router/routes'
@@ -29,6 +30,7 @@ export function App() {
 
       <main className="app-main">
         <CompatibilityBanner />
+        <PersistencePrompt />
         <Screen path={path} match={match} />
       </main>
 

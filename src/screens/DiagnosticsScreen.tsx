@@ -6,7 +6,8 @@ import {
 } from '../diagnostics/capabilities'
 import type { DiagnosticSources } from '../diagnostics/capabilities'
 import { rowsToText } from '../diagnostics/format'
-import { browserStringStore, createTestField } from '../diagnostics/testField'
+import { createTestField } from '../diagnostics/testField'
+import { browserStringStore } from '../storage/stringStore'
 import { setSessionOpen, setTrackActive } from '../session/sessionFlags'
 import { useSessionFlags } from '../session/useSessionFlags'
 
