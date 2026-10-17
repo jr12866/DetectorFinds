@@ -66,6 +66,17 @@ const SW_STATUS: Record<ServiceWorkerState, DiagnosticRow['status']> = {
   error: 'bad',
 }
 
+/**
+ * A first install registers its service worker *after* the first paint, so the
+ * very first read can say "not installed" about an app that is actually fine.
+ * One extra read, once the registration settles, is enough (R-FIRST-4).
+ */
+export function shouldRecheckServiceWorker(
+  s: Pick<DiagnosticSources, 'serviceWorkerSupported' | 'serviceWorkerState'>,
+): boolean {
+  return s.serviceWorkerSupported && s.serviceWorkerState === 'none'
+}
+
 export function collectDiagnostics(s: DiagnosticSources): DiagnosticRow[] {
   const platform = describePlatform(s.userAgent, s.maxTouchPoints, s.serviceWorkerSupported)
   const rows: DiagnosticRow[] = []
@@ -304,7 +315,7 @@ export async function readBrowserSources(): Promise<DiagnosticSources> {
 }
 
 async function readServiceWorkerState(): Promise<ServiceWorkerState> {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return 'unsupported'
+  if (typeof window === 'undefined' || !readServiceWorkerSupport(navigator)) return 'unsupported'
   try {
     const registration = await navigator.serviceWorker.getRegistration()
     if (!registration) return 'none'

@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
-import { collectDiagnostics, readBrowserSources } from '../diagnostics/capabilities'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  collectDiagnostics,
+  readBrowserSources,
+  shouldRecheckServiceWorker,
+} from '../diagnostics/capabilities'
 import type { DiagnosticSources } from '../diagnostics/capabilities'
 import { rowsToText } from '../diagnostics/format'
 import { browserStringStore, createTestField } from '../diagnostics/testField'
@@ -19,6 +23,7 @@ export function DiagnosticsScreen() {
   const [notice, setNotice] = useState<string | null>(null)
   const [draft, setDraft] = useState(() => testField.read())
   const [saved, setSaved] = useState(() => testField.read())
+  const recheckedRef = useRef(false)
 
   const refresh = useCallback(async () => {
     setError(null)
@@ -32,6 +37,22 @@ export function DiagnosticsScreen() {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  /**
+   * On a first install the service worker registers after the first paint, so the
+   * opening read can say "not installed" about an app that is actually fine. Wait
+   * once for the registration to settle, then read again (R-FIRST-4).
+   */
+  useEffect(() => {
+    if (recheckedRef.current) return
+    if (!sources || !shouldRecheckServiceWorker(sources)) return
+    recheckedRef.current = true
+    const container = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined
+    if (!container) return
+    void container.ready
+      .then(() => refresh())
+      .catch(() => {})
+  }, [sources, refresh])
 
   const rows = sources
     ? collectDiagnostics({

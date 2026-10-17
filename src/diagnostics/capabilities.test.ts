@@ -4,6 +4,7 @@ import {
   collectDiagnostics,
   geolocationRow,
   persistenceRow,
+  shouldRecheckServiceWorker,
   storageRow,
   type DiagnosticSources,
 } from './capabilities'
@@ -189,5 +190,24 @@ describe('geolocationRow', () => {
   it('warns while the question has not been asked', () => {
     expect(geolocationRow(true, 'prompt').status).toBe('warn')
     expect(geolocationRow(true, null).status).toBe('warn')
+  })
+})
+
+describe('shouldRecheckServiceWorker', () => {
+  it('re-reads once when a first install has not registered yet', () => {
+    expect(shouldRecheckServiceWorker(sources({ serviceWorkerState: 'none' }))).toBe(true)
+  })
+
+  it('leaves the answer alone once the worker has settled', () => {
+    for (const state of ['active', 'controlling', 'waiting', 'installing'] as const) {
+      expect(shouldRecheckServiceWorker(sources({ serviceWorkerState: state }))).toBe(false)
+    }
+  })
+
+  it('does not wait on a registration that can never arrive', () => {
+    expect(
+      shouldRecheckServiceWorker(sources({ serviceWorkerSupported: false, serviceWorkerState: 'none' })),
+    ).toBe(false)
+    expect(shouldRecheckServiceWorker(sources({ serviceWorkerState: 'error' }))).toBe(false)
   })
 })
