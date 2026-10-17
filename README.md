@@ -47,6 +47,30 @@ installability, and Pages is free. The app is served from a subpath, so `base` i
 config and the scope in the manifest must both match the repo name. The build sets that base
 when `GITHUB_PAGES=true`, which the deploy workflow does; a plain local build serves from `/`.
 
+Pushing to `main` builds and deploys through
+[`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml): tests, build, then Pages.
+
+## Install it on a phone
+
+The live app is at **<https://jr12866.github.io/DetectorFinds/>** (adjust the owner if the repo
+moves). Every build step is verified on a real Android phone at this URL before the next step
+starts.
+
+1. Open the URL in **Chrome on Android**. Other browsers and iOS load the shell but nothing
+   more is promised.
+2. Chrome menu → **Install app** (or **Add to Home screen**). Confirm the icon and the label.
+3. Launch from the icon. On first run the app asks to keep its data — allow it, otherwise the
+   phone may delete the database when disk fills.
+4. Turn on airplane mode, kill Chrome from Recents, and tap the icon again. The shell must
+   open with no network.
+5. Open **Settings → Diagnostics** and read every line. That screen is how a phone problem
+   gets diagnosed instead of guessed at.
+6. When a new version is deployed, the app does not change underneath you: a toast offers
+   **Refresh**, and it never appears while a Session is open.
+
+The dev server is not installable — service workers need HTTPS — so phone checks always go
+through the deployed build. `npm run preview` is enough to check the same shell on a desktop.
+
 ## Licence
 
 MIT. See [LICENSE](./LICENSE).
