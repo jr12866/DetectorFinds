@@ -4,9 +4,12 @@ An offline-first Android web app for metal detecting finds: log a hole where you
 drop a pin, photograph it, and deal with the detail later at home. Everything lives on the phone.
 No account, no server, no upload.
 
-**Status: step 00 built.** The installable shell runs on a phone: manifest, service worker,
-hash routing, the five empty screens, and a Diagnostics screen that says whether the phone can be
-trusted with the data. The spec is finished and the build order is set; the next step is
+**Status: step 00 shipped, step 01 built and awaiting its phone gate.** The installable shell
+runs on a phone: manifest, service worker, hash routing, the five empty screens, and a
+Diagnostics screen that says whether the phone can be trusted with the data. Behind it sits a
+tested IndexedDB layer — schema, repositories, filter API, units, seeder — that has never been
+opened on a phone. [docs/STATUS.md](./docs/STATUS.md) records exactly what exists, what is
+uncommitted, and what is not started. The next step is to finish and verify
 [step 01, the data layer](./docs/build/01-data-layer.md).
 
 ## What it does
@@ -25,6 +28,7 @@ trusted with the data. The spec is finished and the build order is set; the next
 |---|---|
 | [PRD.md](./PRD.md) | The product contract. Every requirement has an ID (`R-FIND-1`) that the build steps cite. Read this first. |
 | [GLOSSARY.md](./GLOSSARY.md) | The domain vocabulary. Find, Item, Miss, Site, Session, Track, Pin, Placed Pin, Cached Area. Code, docs and UI copy all use these words. |
+| [docs/STATUS.md](./docs/STATUS.md) | What is actually built, what is uncommitted, and what has not been started. Written as code that runs, not as intent. |
 | [docs/build/](./docs/build/) | Thirteen build steps, each ending with something that runs on a phone. [Start here](./docs/build/README.md). |
 | [docs/adr/](./docs/adr/) | Six decisions held deliberately: PWA target, local-first, IndexedDB, Leaflet + USGS tiles, foreground-only tracking, imperial display. |
 | [docs/CSV-IMPORT.md](./docs/CSV-IMPORT.md) | The published CSV contract, for anyone formatting old finds to import. [Worked example](./docs/examples/finds-sample.csv). |
