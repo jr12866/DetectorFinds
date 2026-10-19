@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { DatabaseTools } from '../components/DatabaseTools'
 import {
   collectDiagnostics,
   readBrowserSources,
@@ -22,6 +23,8 @@ export function DiagnosticsScreen() {
   const [sources, setSources] = useState<DiagnosticSources | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  /** The last benchmark run, as text, so the raw dump carries the timings. */
+  const [dbText, setDbText] = useState('')
   const [draft, setDraft] = useState(() => testField.read())
   const [saved, setSaved] = useState(() => testField.read())
   const recheckedRef = useRef(false)
@@ -62,7 +65,10 @@ export function DiagnosticsScreen() {
         trackActive: flags.trackActive,
       })
     : []
-  const dump = rowsToText(rows)
+  // The timings belong in the same block of text a user copies off the phone,
+  // which is what makes "logged, not eyeballed" (step 01, criterion 2) checkable
+  // by someone who is not standing next to the phone.
+  const dump = [rowsToText(rows), dbText].filter((part) => part !== '').join('\n\n')
 
   async function requestPersistence() {
     setNotice(null)
@@ -179,6 +185,8 @@ export function DiagnosticsScreen() {
         </div>
         <p className="muted">{saved ? `Stored value: ${saved}` : 'Nothing stored.'}</p>
       </section>
+
+      <DatabaseTools onChanged={() => void refresh()} onReportText={setDbText} />
 
       <section className="card">
         <h3>Capabilities</h3>
