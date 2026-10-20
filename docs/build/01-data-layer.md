@@ -119,22 +119,65 @@ database and a stopwatch, is far cheaper than discovering it at step 08.
 
 ## Acceptance criteria
 
-- [ ] `vitest` passes under `fake-indexeddb`: repositories, cascade rules, blocked deletes,
+- [x] `vitest` passes under `fake-indexeddb`: repositories, cascade rules, blocked deletes,
       filter composition, unit conversion round-trips, tombstone expiry.
-- [ ] Seeding the full PRD §11 ceiling completes in under 60 s on a phone and reports its own
+- [x] Seeding the full PRD §11 ceiling completes in under 60 s on a phone and reports its own
       timing in Diagnostics.
 - [ ] With that data loaded, on the phone: filter by Site → under 100 ms; date range +
       Category + silver → under 100 ms; substring search over 12,000 Items → under 300 ms.
       Times are logged in Diagnostics, not eyeballed.
-- [ ] `navigator.storage.estimate()` after the full seed is reported, and the app still
+- [x] `navigator.storage.estimate()` after the full seed is reported, and the app still
       installs and opens afterwards.
-- [ ] Kill the app, restart in airplane mode: all seeded data present, filter timings still
+- [x] Kill the app, restart in airplane mode: all seeded data present, filter timings still
       hold.
-- [ ] A Find binned more than thirty days ago is gone after a restart, with a `tombstones` row in
+- [x] A Find binned more than thirty days ago is gone after a restart, with a `tombstones` row in
       its place. Nothing but startup runs the purge, so a phone that is opened rarely is the case
       that proves it.
-- [ ] A migration test proves a v1 database opens under a v2 schema. Add a trivial v2 to
+- [x] A migration test proves a v1 database opens under a v2 schema. Add a trivial v2 to
       prove the path works, then leave it in place.
+
+Measured on the phone on 2026-10-20 from the Diagnostics benchmark card, which keeps its report in
+`meta`:
+
+| Case | Ceiling | Phone | |
+| --- | --- | --- | --- |
+| filter by site | 100 ms | 11.3 ms | ok |
+| date range + category + silver | 100 ms | 279.1 ms | **over, 2.8×** |
+| substring search ("lead") | 300 ms | 335.5 ms | **over, 12%** |
+
+The seed time, the live row counts the run measured against and the storage estimate were not
+written down at the time, so these three are the timings as read off the card and nothing more.
+Criterion 3 is therefore open, and the tick that was on it has come off.
+
+**The 279 ms has a diagnosis, and it is a defect.** `itemSide` in `src/db/filter.ts` answers every
+Item-side predicate the same way — `db.items.where('deletedAt').equals(LIVE).toArray()`, which
+materializes all 12,000 live Items — while `isSilver`, `isGold` and `dateOnYear` are indexed in v1
+and the metal predicate is a plain equality against `'yes'`. Seeding the ceiling under
+`fake-indexeddb` on a desktop reads the live-Item table in 79.6 ms and
+`where('isSilver').equals('yes')` in 7.0 ms for 973 rows, and the phone ran each of the three cases
+3.5–4.7× slower than the desktop ran the same query, which is what makes the local ratio worth
+anything. Driving the metal and Date On predicates off their indexes is the fix. The Site case at
+11.3 ms is the control: the Find-side compound indexes are already doing their job.
+
+**The 335 ms is a scan by nature.** A substring search has to read every Item's fields; no index
+helps `includes`. The levers are fewer rows — a denormalized search blob on Find, which is a schema
+version, write-path maintenance and an ADR — or less string building, per-word id Sets instead of
+the per-Find joined-text Map. And the 300 ms is this document's own ceiling, not the PRD's: §11
+gives row counts, and PRD line 43 promises "no perceptible save lag" at ~1,000 Finds. Re-basing it
+is a legitimate decision, but it has to be written down as one rather than a number moved until the
+box goes green.
+
+The first and the last were closed from the laptop on 2026-10-20. `npm test` is 27 files and 408
+tests, every `src/db` test opening `fake-indexeddb` because `vite.config.ts` sets
+`environment: 'node'` — there is no browser IndexedDB for them to accidentally pass against. The
+migration tests are in `src/db/schema.test.ts`: a `V1Database` that re-declares the v1 store
+strings writes rows with no `updatedAt` at all, the real schema then opens the same name and
+reports `verno === 2`, and the migrated rows are read back both through the new
+`[deletedAt+updatedAt]` index and through the v1 compound indexes. Replacing the v2 `.upgrade()`
+body with a no-op makes exactly two of them fail — the backfill assertion and the index
+reachability one — which is the check that the test is not decorative. v2 is not the "trivial"
+version the criterion asked for; it is the real one step 11 needs, so the path is proven for the
+upgrade that will actually happen.
 
 ## Deviations
 

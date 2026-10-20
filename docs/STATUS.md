@@ -1,26 +1,28 @@
 # Status
 
-What exists as of 2026-10-19, stated as **code that runs** rather than as intent. The build
+What exists as of 2026-10-20, stated as **code that runs** rather than as intent. The build
 plan is [13 steps](./build/README.md); the product contract is [PRD.md](../PRD.md).
 
-**One step is shipped, two are in flight, ten have not been started.** The app installs,
-opens in airplane mode and reports what the phone will give it. The data layer is written
-and tested but has never been opened on a phone. Nothing the PRD promises a user — log a
-find, drop a pin, take a photo — is on a screen yet: every feature screen is still a
-placeholder naming the step that brings it.
+**Step 00 is shipped and signed off. Step 01 is shipped with one acceptance criterion reopened by
+its own phone numbers. One step is in flight, ten have not been started.** The app installs, opens
+in airplane mode and reports what the phone will give it, and the data layer has been seeded and
+timed on that same phone. Nothing the PRD promises a user — log a find, drop a pin, take a photo —
+is on a screen yet: every feature screen is still a placeholder naming the step that brings it.
 
 | Step | State | Evidence |
 | --- | --- | --- |
-| [00](./build/00-scaffold-and-installable-shell.md) Installable shell | **Shipped** | `main`, deployed, live |
-| [01](./build/01-data-layer.md) Data layer | **Built, not accepted** | committed, 408 tests passing, never opened on a phone |
+| [00](./build/00-scaffold-and-installable-shell.md) Installable shell | **Shipped** | `main`, deployed, live, all seven criteria ticked off a phone run |
+| [01](./build/01-data-layer.md) Data layer | **Shipped, one criterion open** | `main`, deployed, 408 tests; phone run done, six of seven ticked — two query timings over their ceilings |
 | [02](./build/02-map-gps-and-the-first-pin.md) Map + GPS + first Pin | **Groundwork only** | support modules committed, no map on screen |
 | 03–12 | Not started | screens render `Placeholder` |
 
-A step is only *accepted* when its acceptance criteria and its "verify on a phone" list have
-been run on real hardware ([rule 1](./build/README.md)). **No step's checkboxes are ticked,
-including step 00's.** Step 00 is deployed and the README carries the install procedure, but
-the repo holds no signed-off record of the phone run. Treat "shipped" as "deployed and
-awaiting its sign-off", not as "verified".
+A step is only *accepted* when its acceptance criteria and its "verify on a phone" list have been
+run on real hardware ([rule 1](./build/README.md)). Steps 00 and 01 have been through that, and the
+step 01 run produced numbers: 11.3 ms for the Site filter, 279.1 ms for date range + Category +
+silver against a 100 ms ceiling, 335.5 ms for substring search against 300 ms. Two of the three
+missed, so criterion 3 is unticked again and the numbers are written into the step doc beside it.
+Every later step's phone run should end the same way — report text out of the Diagnostics card and
+into the step doc, whether or not it passes.
 
 ## Step 00 — shipped
 
@@ -40,13 +42,15 @@ What is in it:
 | Session flags | `src/session/` | `sessionOpen` / `trackActive` store, so step 05 has a real flag to set |
 | Degradation | `src/platform/` | Android/iOS/desktop detection, iOS banner, no crash on desktop |
 
-## Step 01 — built, not accepted
+## Step 01 — shipped, one criterion open
 
-Committed: `src/db/`, `src/units/`, `src/components/DatabaseTools.tsx`,
+On `main` and live: `src/db/`, `src/units/`, `src/components/DatabaseTools.tsx`,
 `scripts/make-jpeg-fixture.mjs`, the `dexie` / `dexie-react-hooks` / `uuid` dependencies, and the
-edits to `src/main.tsx` and `src/screens/DiagnosticsScreen.tsx`. What is outstanding is the phone
-gate, not the code: no acceptance criterion is ticked, because none has been run on hardware
-([rule 1](./build/README.md)).
+edits to `src/main.tsx` and `src/screens/DiagnosticsScreen.tsx`. Six of the seven acceptance
+criteria are ticked — the two that only need a laptop (`vitest`, the migration test) and four that
+need hardware (the ceiling seed inside 60 s, the storage estimate, the airplane-mode restart, and a
+thirty-day Bin entry gone after a restart). The third, the three query timings, is open: the phone
+returned 11.3 ms / 279.1 ms / 335.5 ms against ceilings of 100 / 100 / 300 ms.
 
 **Schema** (`src/db/schema.ts`): 13 stores — `finds`, `items`, `photos`, `photoBlobs`,
 `sites`, `landowners`, `permissions`, `sessions`, `trackPoints`, `detectors`, `presets`,
@@ -89,9 +93,13 @@ something to say. Two rules it exists to get right, each now pinned by a test af
 found broken: every range is closed at both ends (`src/db/ranges.ts` → `betweenClosed`, because
 Dexie's `between` is open at the top by default), and search is never a gate on its own — a word
 may match the Find's note, its Site's name, its Landowner's name, or any one field of any of its
-Items, and the words need not come from one Item. Index choice is deliberately modest, because at
-5,000 live Finds a scan costs single-digit milliseconds and readable rules matter more than the
-last 5 ms.
+Items, and the words need not come from one Item. Index choice was deliberately modest, on the
+reasoning that at 5,000 live Finds a scan costs single-digit milliseconds. The phone says that is
+true of Finds and false of Items: the Item half walks all 12,000 live rows whatever the rest of the
+filter has already narrowed, and that is where the 279 ms goes. `isSilver`, `isGold` and
+`dateOnYear` are indexed in v1 and the metal predicate is a plain equality, so that half needs to
+be driven off its index. The Site case at 11.3 ms is the control — the Find-side compound indexes
+are already doing their job.
 
 **Live queries** (`src/db/liveQueries.ts`, build item 5): `useFinds`, `useFindCount`, `useFind`,
 `useItemsOfFind`, `usePhotosOfOwner`, `useNeedsDetail`, `useNeedsDetailCount`,
@@ -127,12 +135,17 @@ image bytes actually written against PRD §11's photo budget. The last benchmark
 
 **Still missing from step 01:**
 
-- The phone gate, which is all seven acceptance criteria. Seed the ceiling in under 60 s, filters
-  under 100 ms, search over 12,000 Items under 300 ms, the storage estimate reported, data intact
-  after an airplane-mode restart, a thirty-day-old Bin entry gone after a restart, and v1 opening
-  under v2. `src/db/benchmark.ts` runs the three named queries against their ceilings and reports
-  pass or fail, and the Diagnostics card puts it one tap away — but no numbers exist, because no
-  phone has run it yet.
+- **The Item half of the filter is a full scan, and it is 179 ms over ceiling.** `itemSide` in
+  `src/db/filter.ts` reads every live Item for any metal or Date On predicate, while the
+  `isSilver`, `isGold` and `dateOnYear` indexes registered in v1 go unused. Fix it with tests, then
+  re-run the benchmark on the phone and write the new numbers beside the old ones.
+- **The rest of the phone run's numbers.** The three timings are in the step doc now; the seed time,
+  the live row counts they were measured against, and the storage estimate are not. `meta`'s
+  `lastBenchmark` still holds the report on the phone, so they can be copied out without re-seeding.
+- **What to do about substring search.** 335.5 ms against a 300 ms ceiling this repo invented, not
+  one the PRD set. Either make it cheaper — per-word id Sets instead of the per-Find joined-text
+  Map, or a denormalized search blob on Find, which is a schema version and an ADR — or re-base the
+  ceiling with the reason written down. Undecided.
 - **`src/db/liveQueries.ts` has no test.** It is a thin wrapper over `useLiveQuery` and the filter
   API, both of which are tested, and the repo's rule is that screens are verified by hand; the
   hooks are verified when step 03 puts them on one.
@@ -184,23 +197,35 @@ should force a schema change, but that is a claim the step itself has to re-chec
 No component tests. That is deliberate ([rule 3](./build/README.md)): logic is tested,
 screens are verified by hand on a phone.
 
+`src/db/schema.test.ts` is the file that answers "will a phone holding an old schema still open
+after a change": it builds a genuinely v1 database, writes rows with no `updatedAt` at all, then
+opens the same name under v2 and reads the migrated rows back through both the new
+`[deletedAt+updatedAt]` index and the v1 compound indexes. Replacing the v2 `.upgrade()` body with
+a no-op fails exactly the two tests that should fail, which is how the migration test was checked
+rather than trusted.
+
 ## To check any of this yourself
 
 ```bash
-npm test                      # the 408
-git log --oneline -3          # step 01, then the step 02 groundwork under it
-npm run build && npm run preview   # the shell, installable locally over HTTPS-less localhost
+npm test                                 # the 408
+npx vitest run src/db/schema.test.ts     # the v1 → v2 migration on its own
+git log --oneline -3                     # step 01, then the step 02 groundwork under it
+npm run build && npm run preview         # the shell, installable locally over HTTPS-less localhost
 ```
 
 ## Next, in order
 
-1. Push step 01 to `main` so the deploy workflow builds it, then run its phone gate, write the
-   numbers down, and tick the acceptance criteria — the same order step 00 went in, and the reason
-   step 00 is "deployed and awaiting sign-off". Start the seed with the photo dial low and raise it
-   once the row counts are proven.
-2. Settle the R-UNIT-4 question: either amend the PRD to match a data layer that stores UTC only,
+1. Fix the Item half of [the filter](./src/db/filter.ts) to read through the `isSilver` / `isGold` /
+   `dateOnYear` indexes instead of scanning every live Item, with tests that pin the semantics the
+   existing filter tests already describe. Then re-run the benchmark on the phone and close
+   criterion 3 with numbers written beside the 279.1 ms they are meant to replace. While the phone
+   is open, copy out the seed time, the live row counts and the storage estimate — they are still
+   only in `meta`'s `lastBenchmark`.
+2. Decide the substring-search question rather than letting it drift: cheaper, or a ceiling re-based
+   with a reason. Both answers are defensible; an unrecorded drift is not.
+3. Settle the R-UNIT-4 question: either amend the PRD to match a data layer that stores UTC only,
    or add `utcOffsetMinutes` to Find and Session as a schema version. Leaving the PRD and the code
    disagreeing is how a later step ends up writing a third answer.
-3. Close the remaining [rule 3](./build/README.md) gaps: the `src/gps` and `src/map` arithmetic
+4. Close the remaining [rule 3](./build/README.md) gaps: the `src/gps` and `src/map` arithmetic
    that has no tests yet.
-4. Build the step 02 map component, with tests for the arithmetic that already exists.
+5. Build the step 02 map component, with tests for the arithmetic that already exists.
