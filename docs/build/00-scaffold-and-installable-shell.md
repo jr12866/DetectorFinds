@@ -59,17 +59,17 @@ subpath, which sets `start_url` and `scope`. "DetectorFinds" is the working titl
 
 ## Acceptance criteria
 
-- [ ] On Android Chrome, the menu offers "Add to Home screen" and the install completes.
-- [ ] In airplane mode, a cold start from the icon reaches the shell in under two seconds,
+- [x] On Android Chrome, the menu offers "Add to Home screen" and the install completes.
+- [x] In airplane mode, a cold start from the icon reaches the shell in under two seconds,
       with no blank screen and no console errors.
-- [ ] Diagnostics shows: service worker controlling, IndexedDB supported, geolocation
+- [x] Diagnostics shows: service worker controlling, IndexedDB supported, geolocation
       supported, wake lock supported, persistence granted.
-- [ ] Redeploying a changed build and reopening the app shows the Refresh toast, and a value
+- [x] Redeploying a changed build and reopening the app shows the Refresh toast, and a value
       typed into a test field in Diagnostics survives the refresh.
-- [ ] Reloading a deep link such as `/#/settings/diagnostics` on a fresh install works.
-- [ ] Opening the URL on an iPhone renders the shell and the Android-only banner without
+- [x] Reloading a deep link such as `/#/settings/diagnostics` on a fresh install works.
+- [x] Opening the URL on an iPhone renders the shell and the Android-only banner without
       throwing.
-- [ ] Rotating the phone does not reflow the shell.
+- [x] Rotating the phone does not reflow the shell.
 
 ## Verify on a phone
 
