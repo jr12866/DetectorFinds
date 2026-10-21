@@ -37,8 +37,9 @@ describe('track points repository', () => {
 
     const stored = await app.repos.sessions.get(session.id)
     expect(stored?.trackPointCount).toBe(3)
-    // 0.001° of latitude is about 110.5 m, twice over.
-    expect(stored?.trackDistanceM).toBeCloseTo(221.1, 0)
+    // 0.001° of latitude is about 111.2 m, twice over. The figure changed in
+    // step 02 when distanceM moved to mean-earth metres per degree.
+    expect(stored?.trackDistanceM).toBeCloseTo(222.4, 0)
   })
 
   it('adds nothing for an empty run and leaves the totals alone', async () => {
@@ -72,11 +73,11 @@ describe('track points repository', () => {
 
     const recount = await app.repos.trackPoints.recount(session.id)
     expect(recount.trackPointCount).toBe(2)
-    expect(recount.trackDistanceM).toBeCloseTo(110.5, 0)
+    expect(recount.trackDistanceM).toBeCloseTo(111.2, 0)
 
     const stored = await app.repos.sessions.get(session.id)
     expect(stored?.trackPointCount).toBe(2)
-    expect(stored?.trackDistanceM).toBeCloseTo(110.5, 0)
+    expect(stored?.trackDistanceM).toBeCloseTo(111.2, 0)
   })
 
   it('deletes every point for a Session and zeroes its totals', async () => {

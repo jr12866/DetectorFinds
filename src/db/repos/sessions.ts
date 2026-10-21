@@ -2,18 +2,15 @@ import type { AppDatabase } from '../schema'
 import { DeleteBlockedError } from '../errors'
 import { newId } from '../ids'
 import { LIVE, type Session, type TrackPoint } from '../types'
+import { distanceM } from '../../geo/distance'
 import { clockFrom, tombstone, type RepoOptions } from './common'
 
 /** R-TRACK-1: the sampling rule, stated here so the caller cannot invent its own. */
 export const TRACK_SAMPLE_INTERVAL_MS = 3_000
 export const TRACK_SAMPLE_DISTANCE_M = 5
 
-/** WGS84 distance, good enough for a walk and cheap enough to run per point. */
-export function distanceM(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
-  const dLat = (a.lat - b.lat) * 110_540
-  const dLon = (a.lon - b.lon) * 111_320 * Math.cos((((a.lat + b.lat) / 2) * Math.PI) / 180)
-  return Math.hypot(dLat, dLon)
-}
+/** The formula lives in src/geo/distance.ts; re-exported so existing imports keep working. */
+export { distanceM } from '../../geo/distance'
 
 /**
  * Sessions (PRD §7) and the Track that belongs to one.

@@ -13,82 +13,22 @@
  *
  * Step 07 owns the real Category list and its colours; until then there is one
  * colour plus the hollow Miss variant, which is all the map can honestly tell.
+ *
+ * The decision about what a Pin looks like is in `pinStyle.ts`, where it has a
+ * test; this file only hands those numbers to Leaflet.
  */
 import { divIcon, type CircleMarkerOptions, type DivIcon } from 'leaflet'
+import { MISS_COLOUR, PIN_COLOUR, SELECTED_COLOUR, pinStyleFor, type PinStyleOptions } from './pinStyle'
 
-/** The recovery colour: a brown that stays readable on NAIP imagery and on the topo sheet. */
-export const PIN_COLOUR = '#c2410c'
-/** Misses are drawn hollow (R-MAP-1), so this is only an outline colour. */
-export const MISS_COLOUR = '#4b5563'
-/** A Placed Pin is a claim made by hand, so it looks different on purpose. */
-export const PLACED_COLOUR = '#1d4ed8'
-export const SELECTED_COLOUR = '#0f766e'
+/** The style decision lives in pinStyle.ts; screens may import either file. */
+export * from './pinStyle'
 
 /**
- * Category colour. Step 07 replaces the body of this one function with the real
- * Category list's colours, so nothing else on the map has to change again.
- */
-export function pinColourForCategory(categoryId: string): string {
-  return categoryId === '' ? MISS_COLOUR : PIN_COLOUR
-}
-
-/** Radius in pixels. Small enough that 5,000 of them still read as a field. */
-export const PIN_RADIUS_PX = 7
-
-export interface PinStyleOptions {
-  categoryId: string
-  /** `positionSource: 'hand'` - a Placed Pin (GLOSSARY). */
-  placed: boolean
-  selected: boolean
-}
-
-/**
- * The canvas style for a Pin. Hollow means `fill: false` with a coloured ring,
+ * The canvas style for a Pin. Hollow means a low fill with a coloured ring,
  * which is what a Miss looks like; a filled disc is a recovery.
  */
 export function pinStyle(options: PinStyleOptions): CircleMarkerOptions {
-  const isMiss = options.categoryId === ''
-  const colour = options.placed ? PLACED_COLOUR : pinColourForCategory(options.categoryId)
-  if (options.selected) {
-    return {
-      radius: PIN_RADIUS_PX + 2,
-      color: SELECTED_COLOUR,
-      weight: 3,
-      fillColor: isMiss ? '#ffffff' : colour,
-      fillOpacity: 1,
-      opacity: 1,
-    }
-  }
-  if (isMiss) {
-    return {
-      radius: PIN_RADIUS_PX,
-      color: colour,
-      weight: 2,
-      fillColor: '#ffffff',
-      fillOpacity: 0.25,
-      opacity: 0.95,
-    }
-  }
-  if (options.placed) {
-    // A Placed Pin carries no accuracy claim (R-GPS: "A Placed Pin carries no
-    // accuracy claim"), so it gets a white ring to separate it from a GPS Pin.
-    return {
-      radius: PIN_RADIUS_PX,
-      color: '#ffffff',
-      weight: 2,
-      fillColor: colour,
-      fillOpacity: 1,
-      opacity: 1,
-    }
-  }
-  return {
-    radius: PIN_RADIUS_PX,
-    color: '#ffffff',
-    weight: 1.5,
-    fillColor: colour,
-    fillOpacity: 1,
-    opacity: 1,
-  }
+  return pinStyleFor(options)
 }
 
 /** The marker shown while Move Pin waits for a single tap (R-EDIT-1). */

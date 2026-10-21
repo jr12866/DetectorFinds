@@ -6,8 +6,9 @@
  * is the whole contract, there is no token, and the tiles are public domain.
  *
  * Native zoom tops out at 16 for all three. Zooming past that re-renders the
- * level-16 tiles rather than asking for tiles that do not exist (R-MAP-10 in
- * step 02's build list: `maxZoom` 19 on the map, `maxNativeZoom` here).
+ * level-16 tiles rather than asking for tiles that do not exist (PRD R-MAP-11:
+ * a failed tile must not break the map). `maxZoom` 19 on the map,
+ * `maxNativeZoom` here.
  */
 
 export type BasemapId = 'imagery' | 'hybrid' | 'topo'
@@ -119,10 +120,13 @@ export function tileCountForBounds(bounds: { south: number; west: number; north:
   let total = 0
   for (let z = minZoom; z <= maxZoom; z += 1) {
     const n = 2 ** z
-    const x0 = Math.floor(((bounds.west + 180) / 360) * n)
-    const x1 = Math.floor(((bounds.east + 180) / 360) * n)
-    const y0 = Math.floor(latToTileY(bounds.north, n))
-    const y1 = Math.floor(latToTileY(bounds.south, n))
+    // Clamped to the grid: a bounds that touches -180 or +180 otherwise counts a
+    // column of tiles that does not exist, which over-states the download the
+    // user is being asked to approve (R-CACHE-2).
+    const x0 = Math.max(0, Math.floor(((bounds.west + 180) / 360) * n))
+    const x1 = Math.min(n - 1, Math.floor(((bounds.east + 180) / 360) * n))
+    const y0 = Math.max(0, Math.floor(latToTileY(bounds.north, n)))
+    const y1 = Math.min(n - 1, Math.floor(latToTileY(bounds.south, n)))
     total += (x1 - x0 + 1) * (y1 - y0 + 1)
   }
   return total

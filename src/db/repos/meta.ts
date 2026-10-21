@@ -62,4 +62,16 @@ export const META_KEYS = {
   startScreen: 'startScreen',
   importWarnedAt: 'importWarnedAt',
   durabilityProbe: 'diagnostics.durabilityProbe',
+  /** Which Basemap the Field map uses (R-MAP-4, step 02 build item 2). A BasemapId. */
+  mapBasemap: 'map.basemap',
+  /**
+   * Prefix for the per-Site map view (step 02 build item 14). The full key is
+   * `mapView:<siteId>`, and the unassigned bucket uses the empty siteId, so a
+   * Find logged before a Site is chosen still reopens where it was logged.
+   */
+  mapViewPrefix: 'mapView',
+  /** The last view anywhere in the app, used when a Site has no view of its own. */
+  mapLastView: 'mapLastView',
+  /** The last position the phone reported, so a cold map opens near the user. */
+  mapLastPosition: 'mapLastPosition',
 } as const

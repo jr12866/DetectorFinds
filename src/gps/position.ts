@@ -6,6 +6,7 @@
  * smoothed so the map does not wobble.
  */
 import type { Millis, PositionSource } from '../db/types'
+import { scatterM } from '../geo/distance'
 
 export type GpsStatus = 'idle' | 'requesting' | 'ok' | 'denied' | 'unavailable' | 'error'
 
@@ -56,10 +57,12 @@ export interface GpsState {
   fix: SatFix | null
   /** the fix's age in ms at the moment the state was produced */
   ageMs: number
-  /** true when the fix is too old or too inaccurate to log against */
+  /** true when the fix is too old to log against (R-GPS-2); accuracy is a separate question */
   stale: boolean
   /** how many averaged readings went into `position` */
   samples: number
+  /** R-GPS-3: scatter of those readings in metres, null until there are two. */
+  scatterM: number | null
   /** the averaged position, or null before the first fix */
   position: LivePosition | null
 }
@@ -75,6 +78,7 @@ export const IDLE_GPS_STATE: GpsState = {
   ageMs: 0,
   stale: true,
   samples: 0,
+  scatterM: null,
   position: null,
 }
 
@@ -132,12 +136,15 @@ export class PositionAverager {
       }
     }
     const n = this.samples.length
+    const meanLat = lat / n
+    const meanLon = lon / n
     return {
-      lat: lat / n,
-      lon: lon / n,
+      lat: meanLat,
+      lon: meanLon,
       accuracy: accuracy / n,
       altitudeM: altitudeCount === 0 ? 0 : altitudeTotal / altitudeCount,
       heading: headingCount === 0 ? null : ((Math.atan2(sumSin, sumCos) * 180) / Math.PI + 360) % 360,
+      scatterM: scatterM(this.samples, { lat: meanLat, lon: meanLon }),
     }
   }
 }
@@ -148,6 +155,12 @@ export interface AveragedFix {
   accuracy: number
   altitudeM: number
   heading: number | null
+  /**
+   * R-GPS-3: how far the readings that went into this mean scattered, in metres.
+   * Null when there is only one reading, because one fix has no spread and a
+   * zero would claim a precision the device never gave.
+   */
+  scatterM: number | null
 }
 
 /**
@@ -302,6 +315,7 @@ export class GpsFeed {
       ageMs: Date.now() - fix.fixTime,
       stale: isStale(fix, Date.now()),
       samples: this.averager.count,
+      scatterM: avg ? avg.scatterM : null,
       position,
     })
   }

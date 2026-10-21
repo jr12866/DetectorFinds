@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { countFinds, needsDetailQueue, queryFinds, type FindFilter } from './filter'
 import { getRepositories } from './repos'
-import type { Find, Item, Photo } from './types'
+import type { Find, Item, Photo, Site } from './types'
 
 /**
  * The live queries the UI will read through (build item 5).
@@ -57,6 +57,17 @@ export function useItemsOfFind(findId: string | undefined): Item[] | undefined {
 export function usePhotosOfOwner(ownerId: string | undefined): Photo[] | undefined {
   const { photos } = getRepositories()
   return useLiveQuery(() => (ownerId ? photos.forOwner(ownerId) : []), [ownerId ?? ''])
+}
+
+/**
+ * Every live Site (GLOSSARY), for the name a Pin's card has to show (R-MAP-2) and
+ * for the per-Site map view. Step 06 owns the Site screens; the map only needs
+ * the names, and reading them through a live query is what keeps a renamed Site
+ * correct on the map without the screen doing anything.
+ */
+export function useSites(): Site[] | undefined {
+  const { sites } = getRepositories()
+  return useLiveQuery(() => sites.allLive(), [])
 }
 
 /** The Needs Detail queue, oldest hole first (R-LIST-3). */

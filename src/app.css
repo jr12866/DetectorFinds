@@ -332,6 +332,293 @@ a {
   white-space: pre;
 }
 
+/* ------------------------------------------------------------------ map --- */
+
+/*
+ * The Field map (step 02). Everything drawn over the map is inside `.df-map-wrap`
+ * so it moves with the map's own stacking context instead of competing with the
+ * header and the bottom nav, and every control is at least 56 px tall, because
+ * R-MODE-3 is a rule about gloves, not about pixels.
+ */
+
+.df-map-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.df-map-wrap {
+  position: relative;
+  /* A definite height, or Leaflet draws a zero-height map and nothing on it. */
+  height: min(66dvh, 720px);
+  min-height: 340px;
+}
+
+.df-map {
+  position: absolute;
+  inset: 0;
+  background: #dfe5ea;
+  font-size: 14px;
+}
+
+.df-map-moving {
+  cursor: crosshair;
+}
+
+/* A Tile that gave up (step 02 build item 3). Visible, counted, and never a
+ * blank that reads as "there is nothing there". */
+.df-tile-missing {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(160, 27, 27, 0.14),
+    rgba(160, 27, 27, 0.14) 6px,
+    rgba(255, 255, 255, 0.5) 6px,
+    rgba(255, 255, 255, 0.5) 12px
+  );
+  background-color: #e8e2d8;
+}
+
+.df-basemaps {
+  position: absolute;
+  z-index: 900;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.df-basemap {
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.df-basemap[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.df-status {
+  position: absolute;
+  z-index: 900;
+  top: 60px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.df-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.df-status-figure {
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.df-controls {
+  position: absolute;
+  z-index: 900;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.df-control {
+  flex: 1 1 auto;
+  min-height: 56px;
+  font-size: 17px;
+}
+
+.df-control[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.df-card,
+.df-sheet {
+  position: absolute;
+  z-index: 950;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 -2px 12px rgba(16, 32, 44, 0.18);
+}
+
+.df-sheet {
+  flex-direction: column;
+}
+
+.df-sheet h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.df-sheet-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  margin: 8px 0 0;
+}
+
+.df-sheet-facts dt {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.df-sheet-facts dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.df-card-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex: 0 0 auto;
+}
+
+.df-card-thumb-empty {
+  background: var(--paper-soft);
+  border: 1px dashed var(--line);
+}
+
+.df-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.df-card-title {
+  font-size: 17px;
+}
+
+.df-card-line {
+  font-size: 15px;
+}
+
+.df-card-figure {
+  margin-left: 6px;
+  color: var(--ink-soft);
+}
+
+.df-card-coords {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 14px;
+}
+
+.df-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.df-card-actions .btn {
+  min-height: 48px;
+}
+
+.df-card-hint {
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+
+.df-hints {
+  position: absolute;
+  z-index: 960;
+  left: 8px;
+  right: 8px;
+  bottom: 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.df-hint {
+  margin: 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.df-hint-bad {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+/* R-GPS-2: a stale fix blocks the save, so the reason is a warning, not an error. */
+.df-hint-warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+/* A message about something the map just wrote lives in the status strip, so it
+ * cannot land on top of the Basemap switcher or the control bar. */
+.df-status-flash {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.df-map-note {
+  margin: 0;
+  font-size: 14px;
+}
+
+.df-pin,
+.df-userdot,
+.df-cluster {
+  background: none;
+  border: none;
+}
+
+.df-cluster__disc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid;
+  border-radius: 50%;
+}
+
+.df-cluster__count {
+  font-size: 14px;
+  font-weight: 700;
+}
+
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;

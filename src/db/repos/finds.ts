@@ -88,7 +88,7 @@ export function createFindsRepository(db: AppDatabase, options: RepoOptions = {}
       return update(id, refs)
     },
 
-    /** R-MAP-4 / R-EDIT-1: moving a pin records how the new position was chosen. */
+    /** R-EDIT-1: moving a pin records how the new position was chosen. */
     setPosition(
       id: string,
       position: { lat: number; lon: number; accuracyM?: number; altitudeM?: number; source: PositionSource },
