@@ -1,20 +1,23 @@
 # Status
 
-What exists as of 2026-10-20, stated as **code that runs** rather than as intent. The build
+What exists as of 2026-10-21, stated as **code that runs** rather than as intent. The build
 plan is [13 steps](./build/README.md); the product contract is [PRD.md](../PRD.md).
 
 **Step 00 is shipped and signed off. Step 01 is shipped with one acceptance criterion reopened by
-its own phone numbers. One step is in flight, ten have not been started.** The app installs, opens
-in airplane mode and reports what the phone will give it, and the data layer has been seeded and
-timed on that same phone. Nothing the PRD promises a user — log a find, drop a pin, take a photo —
-is on a screen yet: every feature screen is still a placeholder naming the step that brings it.
+its own phone numbers. Step 02 is built and committed, and not accepted: its ten criteria are
+unticked because none of them can be ticked from a laptop. The other ten have not been started.**
+The app installs, opens in airplane mode and reports what the phone will give it, and the data
+layer has been seeded and timed on that same phone. The Field map is real now — Leaflet with USGS
+tiles, a live blue dot, and Find logging, hand-placed and moved Pins — but none of it has been
+seen on a phone yet, which is exactly what step 02 is about. Everything else is still a
+placeholder naming the step that brings it.
 
 | Step | State | Evidence |
 | --- | --- | --- |
 | [00](./build/00-scaffold-and-installable-shell.md) Installable shell | **Shipped** | `main`, deployed, live, all seven criteria ticked off a phone run |
 | [01](./build/01-data-layer.md) Data layer | **Shipped, one criterion open** | `main`, deployed, 408 tests; phone run done, six of seven ticked — two query timings over their ceilings |
-| [02](./build/02-map-gps-and-the-first-pin.md) Map + GPS + first Pin | **Groundwork only** | support modules committed, no map on screen |
-| 03–12 | Not started | screens render `Placeholder` |
+| [02](./build/02-map-gps-and-the-first-pin.md) Map + GPS + first Pin | **Built, phone run pending** | `main`, 623 tests; Field map with live GPS, logging, hand-placed and moved Pins; 0 of 10 criteria ticked |
+| 03–12 | Not started | Sessions and Sites tabs render `Placeholder` |
 
 A step is only *accepted* when its acceptance criteria and its "verify on a phone" list have been
 run on real hardware ([rule 1](./build/README.md)). Steps 00 and 01 have been through that, and the
@@ -153,24 +156,38 @@ image bytes actually written against PRD §11's photo budget. The last benchmark
   image bytes it wrote and the capability table prints the phone's estimate; comparing them is the
   phone measurement that makes the 40 KB dial worth having.
 
-## Step 02 — groundwork only
+## Step 02 — built, phone run pending
 
-Support modules exist; the map does not. `MapScreen` still renders a placeholder.
+On `main` as `62105d0`. `MapScreen` renders the Field map for real: `src/map/fieldMap.ts` holds
+one Leaflet instance per screen with a canvas renderer and zoom bounds 6–19; the three USGS
+basemaps from ADR-0004 switch through a control persisted in `meta` (R-MAP-4); failed and missing
+tiles go grey with one retry and no request at all while offline (`tilePolicy.ts`, `tiles.ts`,
+R-MAP-11). `src/gps/` feeds the blue dot, its accuracy circle and its fix age via `useGpsState`;
+the heading toggle turns the dot and its wedge while the map stays north-up (Leaflet 1.9 has no
+map rotation — first Deviation in the step doc). `followMode.ts` keeps the dot centred until the
+user drags and Recenter re-arms it. `PositionAverager` keeps a rolling four-second window over the
+same watch that drives the dot, and "Log find" offers its mean; poor accuracy warns and never
+blocks, a stale fix blocks and says how old it is (`pinWrites.ts`, `readouts.ts`). "Add pin by
+hand" and "Move pin" are each two taps, no long-press. Tapping a Pin opens `PinCard` — a React
+panel, not a Leaflet popup — with six fields and a distance in miles/feet from
+`src/geo/distance.ts`; "Open" shows the Find's raw fields until step 03 replaces the screen.
+`viewStore.ts` remembers centre and zoom per Site, then the last view anywhere, then the last
+known position, then the British Isles at minimum zoom.
 
-| Module | State |
-| --- | --- |
-| `src/map/basemaps.ts` | The three USGS layers from ADR-0004, id lookup, tile URL and cache key, `tileCountForBounds`, zoom bounds 6–19 against a native max of 16 |
-| `src/map/tiles.ts` | `BasemapLayer` extending Leaflet's `TileLayer` with grey no-tile handling and a retry cap (R-MAP-10) |
-| `src/map/pinIcon.ts` | Canvas pin styles, hollow Miss, placed/selected colours, cluster icon, heading-aware user-location icon. One Category until step 07 owns the real list |
-| `src/gps/position.ts` | `GpsFeed` (`watchPosition`, high accuracy), `PositionAverager` for R-GPS-3, stale-after-8s and poor-after-25 m rules, heading smoothing |
-| `src/gps/compass.ts` | `DeviceOrientationEvent` heading, iOS permission gate that does not throw on Android |
+The rule 3 breach this file recorded last time is closed: 12 test files and 215 tests across
+`src/gps`, `src/geo` and `src/map`, and the step doc's Laptop-verified table says what each pins.
+`pinStyle.ts` and `tilePolicy.ts` hold the decisions `pinIcon.ts` and `tiles.ts` hand to Leaflet,
+because vitest runs in node and importing Leaflet there throws; the step 02 tests import no
+Leaflet at all. One laptop observation that is not a test: the built app draws a real map and
+loads USGS tiles in headless Chrome with no console errors — wiring, not GPS. The bundle is
+581 kB, 184 kB gzipped, Leaflet included.
 
-None of it is imported by a screen, and **`src/gps` and `src/map` have no tests**, which
-breaks [rule 3](./build/README.md): `PositionAverager`, `smoothHeading`, `isStale`,
-`tileCountForBounds` and `pinColourForCategory` are all pure arithmetic and all testable
-today. Missing: the Leaflet map component, the basemap control, follow mode and recenter,
-"Log find" and "add pin by hand", pin popups, move-pin mode, distance readouts, per-Site
-zoom and centre persistence.
+**What remains is the phone run.** All ten acceptance criteria are unticked, and the step doc says
+plainly that none can be ticked from a laptop. It needs an HTTPS origin the phone can reach —
+push to `main` and use the Pages deploy; `npm run dev` on a LAN address is a non-secure context
+and geolocation is refused. Work through the "Verify on a phone" list, write the observation
+beside each tick, and check criterion 9 as amended: the wedge turns, the map does not. Until that
+run is done and its numbers written down, step 02 is built but not accepted.
 
 ## Steps 03–12 — not started
 
@@ -182,16 +199,20 @@ should force a schema change, but that is a claim the step itself has to re-chec
 
 ## Tests
 
-`npm test` → **27 files, 408 tests, all passing**, all under `fake-indexeddb`, 0.7 s.
+`npm test` → **39 files, 623 tests, all passing**, about 1 s. The `src/db` tests run under
+`fake-indexeddb`; the step 02 arithmetic runs in plain node, importing no Leaflet.
 
 | Area | Files | Tests |
 | --- | --- | --- |
 | `src/db/repos` | 10 | 200 |
+| `src/map` (basemaps, tile policy, pin style/model/writes, popup card, readouts, view store, follow mode) | 9 | 156 |
 | `src/db` (schema, seed, filter, benchmark, startup, JPEG fixture) | 6 | 73 |
+| `src/gps` (position feed and averaging, compass) | 2 | 43 |
 | `src/units` | 1 | 29 |
 | `src/diagnostics` | 3 | 35 |
 | `src/router` | 2 | 26 |
 | `src/platform` | 2 | 20 |
+| `src/geo` (distance, scatter) | 1 | 16 |
 | `src/storage`, `src/session`, `src/updates` | 3 | 25 |
 
 No component tests. That is deliberate ([rule 3](./build/README.md)): logic is tested,
@@ -207,25 +228,27 @@ rather than trusted.
 ## To check any of this yourself
 
 ```bash
-npm test                                 # the 408
+npm test                                 # the 623
 npx vitest run src/db/schema.test.ts     # the v1 → v2 migration on its own
-git log --oneline -3                     # step 01, then the step 02 groundwork under it
+git log --oneline -3                     # step 02, then the two phone-number docs commits under it
 npm run build && npm run preview         # the shell, installable locally over HTTPS-less localhost
 ```
 
 ## Next, in order
 
-1. Fix the Item half of [the filter](./src/db/filter.ts) to read through the `isSilver` / `isGold` /
+1. **Run step 02 on a phone.** Push `main` — the Pages deploy is the HTTPS origin geolocation
+   needs — and work through the
+   [step doc's "Verify on a phone" list](./build/02-map-gps-and-the-first-pin.md), writing the
+   observation beside each tick as it goes. Criterion 9 is checked as amended (the wedge turns,
+   the map stays north-up). Step 02 is not accepted until this is done, and step 03 hangs on it.
+2. Fix the Item half of [the filter](./src/db/filter.ts) to read through the `isSilver` / `isGold` /
    `dateOnYear` indexes instead of scanning every live Item, with tests that pin the semantics the
    existing filter tests already describe. Then re-run the benchmark on the phone and close
    criterion 3 with numbers written beside the 279.1 ms they are meant to replace. While the phone
    is open, copy out the seed time, the live row counts and the storage estimate — they are still
    only in `meta`'s `lastBenchmark`.
-2. Decide the substring-search question rather than letting it drift: cheaper, or a ceiling re-based
+3. Decide the substring-search question rather than letting it drift: cheaper, or a ceiling re-based
    with a reason. Both answers are defensible; an unrecorded drift is not.
-3. Settle the R-UNIT-4 question: either amend the PRD to match a data layer that stores UTC only,
+4. Settle the R-UNIT-4 question: either amend the PRD to match a data layer that stores UTC only,
    or add `utcOffsetMinutes` to Find and Session as a schema version. Leaving the PRD and the code
    disagreeing is how a later step ends up writing a third answer.
-4. Close the remaining [rule 3](./build/README.md) gaps: the `src/gps` and `src/map` arithmetic
-   that has no tests yet.
-5. Build the step 02 map component, with tests for the arithmetic that already exists.

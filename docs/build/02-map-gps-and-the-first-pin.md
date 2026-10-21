@@ -118,8 +118,8 @@ context, and the map opens with the location-permission message where the fix sh
 
 ## Laptop-verified
 
-`npm test` → **39 files, 623 tests, all passing**, about 1 s. Step 01 closed at 33 files and 504
-tests; the six files and 119 tests added here are the arithmetic this step asks for ([rule
+`npm test` → **39 files, 623 tests, all passing**, about 1 s. Step 01 closed at 27 files and 408
+tests; the twelve files and 215 tests added here are the arithmetic this step asks for ([rule
 3](README.md)). None of them imports Leaflet — see the `pinStyle.ts` / `tilePolicy.ts` note under
 Deviations for why that mattered.
 
